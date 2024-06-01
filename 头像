@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+ <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta charset="UTF-8">
+<title>随机头像下载器</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        margin: 0;
+        background-color: #FFFFE0;
+        color: #333;
+    }
+    img {
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+    button {
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        margin: 4px 2px;
+        cursor: pointer;
+        border-radius: 5px;
+    }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+let timer = null;
+
+function fetchAvatar() {
+    fetch('https://www.wudada.online/Api/SjTx')
+        .then(response => response.json())
+        .then(data => {
+            const imgElement = document.getElementById('avatar');
+            const avatarUrl = data.data;
+            imgElement.src = avatarUrl;
+        })
+        .catch(error => console.error('请求头像失败:', error));
+}
+
+function disableZoom(event) {
+    event.preventDefault();
+}
+
+function downloadAlert() {
+    Swal.fire('下载提示', '由于浏览器限制，无法直接下载。请长按图片后选择\'保存图片\'进行下载。', 'info');
+}
+
+function setupAutoRefresh() {
+    Swal.fire({
+        title: '自动刷新设置',
+        html: `<input type="number" id="duration" class="swal2-input" placeholder="持续时间（s）（-1则无限时长）">
+               <input type="number" id="interval" class="swal2-input" placeholder="间隔时间（s）">`,
+        focusConfirm: false,
+        preConfirm: () => {
+            const duration = Swal.getPopup().querySelector('#duration').value;
+            const interval = Swal.getPopup().querySelector('#interval').value;
+            return { duration, interval }
+        }
+    }).then((result) => {
+        if (result.value) {
+            startAutoRefresh(result.value.duration, result.value.interval);
+        }
+    });
+}
+
+function startAutoRefresh(duration, interval) {
+    if (timer) clearInterval(timer);
+    let startTime = Date.now();
+    timer = setInterval(() => {
+        let timePassed = (Date.now() - startTime) / 1000;
+        if (duration != -1 && timePassed > duration) {
+            clearInterval(timer);
+            Swal.fire('自动刷新结束');
+        } else {
+            fetchAvatar();
+            if (duration == -1) {
+                Swal.fire(`自动刷新中... 已经过去 ${Math.floor(timePassed)} 秒`);
+            }
+        }
+    }, interval * 1000);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    fetchAvatar();
+    const imgElement = document.getElementById('avatar');
+    imgElement.addEventListener('dblclick', disableZoom);
+});
+</script>
+</head>
+<body>
+    <h1>随机头像</h1>
+    <img id="avatar" src="" alt="随机头像" style="width: 200px; height: auto;">
+    <button onclick="downloadAlert()">下载头像</button>
+    <button onclick="fetchAvatar()">刷新头像</button>
+    <button onclick="setupAutoRefresh()">自动刷新设置</button>
+</body>
+</html>
