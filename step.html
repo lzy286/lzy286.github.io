@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>微信步数不断加，加加加加到厌倦</title>
+    <style>
+        /* 全局样式 */
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: #1e1e1e; /* 深色背景 */
+            color: #e0e0e0; /* 浅色文字 */
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* 功能区容器 */
+        #myForm {
+            background: #2d2d2d; /* 深灰色背景 */
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 300px;
+            margin: auto; /* 居中 */
+            animation: fadeIn 0.5s ease-in-out;
+            z-index: 10; /* 确保功能区在最上层 */
+        }
+
+        /* 输入框样式 */
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #444; /* 深色边框 */
+            border-radius: 8px;
+            background: #3d3d3d; /* 深灰色背景 */
+            color: #e0e0e0; /* 浅色文字 */
+            font-size: 14px;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        input[type="text"]:focus,
+        input[type="password"]:focus {
+            border-color: #1a73e8; /* 蓝色边框 */
+            box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+            outline: none;
+        }
+
+        /* 按钮样式 */
+        button {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 8px;
+            background: #1a73e8; /* 蓝色按钮 */
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s ease, transform 0.2s ease;
+        }
+
+        button:hover {
+            background: #1557b5; /* 深蓝色 */
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        /* 标题样式 */
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 24px;
+            color: #1a73e8; /* 蓝色标题 */
+            animation: slideIn 0.5s ease-in-out;
+            position: relative; /* 相对定位 */
+        }
+
+        /* 查看教程按钮样式 */
+        .tutorial-button {
+            width:60px;
+            height:30px;
+            position: absolute;
+            Left:260px;
+            top: 100%;
+            transform: translateY(2%);
+            padding:5px 1px;
+            font-size: 12px;
+            border-radius: 7px;
+            background: #1a73e8;
+            color: #fff;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .tutorial-button:hover {
+            background: #1557b5;
+        }
+
+        /* 底部版权信息 */
+        footer {
+            text-align: center;
+            padding: 10px 0;
+            background: #1e1e1e; /* 背景色与页面一致 */
+            font-size: 14px;
+            color: #888; /* 灰色文字 */
+            position: fixed; /* 固定在底部 */
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 1; /* 确保在功能区之下 */
+        }
+
+        footer a {
+            color: #1a73e8; /* 蓝色链接 */
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        footer a:hover {
+            color: #1557b5; /* 深蓝色 */
+        }
+
+        /* 悬浮动画 */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* 遮罩层 */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5); /* 半透明黑色背景 */
+            z-index: 999; /* 确保遮罩层在最上层 */
+            display: none; /* 默认隐藏 */
+        }
+
+        /* 美化提示框 */
+        .custom-alert {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #2d2d2d; /* 深灰色背景 */
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            z-index: 1000; /* 确保提示框在遮罩层之上 */
+            display: none; /* 默认隐藏 */
+            width: 300px; /* 调整提示框宽度 */
+        }
+
+        .custom-alert p {
+            margin: 0 0 20px;
+            font-size: 18px; /* 调整字体大小 */
+            color: #e0e0e0; /* 浅色文字 */
+        }
+
+        .custom-alert button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            background: #1a73e8; /* 蓝色按钮 */
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .custom-alert button:hover {
+            background: #1557b5; /* 深蓝色 */
+        }
+    </style>
+</head>
+<body>
+    <!-- 功能区 -->
+    <div id="myForm">
+        <h1>
+            步数代刷
+           <button class="tutorial-button" onclick="viewTutorial()">查看教程</button>
+        </h1>
+        <form>
+            <label for="user">账号:</label><br>
+            <input type="text" id="user" name="user"><br><br>
+
+            <label for="password">密码:</label><br>
+            <input type="password" id="password" name="password"><br><br>
+
+            <label for="information">步数:</label><br>
+            <input type="text" id="information" name="information"><br><br>
+
+            <button type="button" onclick="saveData()">保存信息</button>
+            <button type="button" onclick="submitData()">提交步数</button>
+        </form>
+    </div>
+
+    <!-- 底部版权信息 -->
+    <footer>
+        <p>&copy; 2025 版权所有lzy | <a href="https://qm.qq.com/cgi-bin/qm/qr?k=n-MJTPif_QKGIfcswUTFVefAhbz4UOo6">联系作者</a></p>
+    </footer>
+
+    <!-- 遮罩层 -->
+    <div id="overlay" class="overlay"></div>
+
+    <!-- 美化提示框 -->
+    <div id="customAlert" class="custom-alert">
+        <p id="alertMessage"></p>
+        <button onclick="closeAlert()">关闭</button>
+    </div>
+
+    <!-- 页面加载时的提示框 -->
+    <div id="welcomeAlert" class="custom-alert">
+        <p>欢迎使用刘总的步数代刷Svvvvvvvvvvvip服务！请确保您已阅读并理解相关说明。</p>
+        <button onclick="closeWelcomeAlertAndSetFlag()">不再提示</button>
+        <button onclick="viewTutorial()">查看教程</button>
+    </div>
+
+    <script>
+        // 保存数据到 localStorage
+        function saveData() {
+            const user = document.getElementById('user').value;
+            const password = document.getElementById('password').value;
+            const information = document.getElementById('information').value;
+
+            localStorage.setItem('user', user);
+            localStorage.setItem('password', password);
+            localStorage.setItem('information', information);
+
+            showAlert('数据已保存！');
+        }
+
+        // 提交数据到 API
+        function submitData() {
+            const user = document.getElementById('user').value;
+            const password = document.getElementById('password').value;
+            const information = document.getElementById('information').value;
+
+            // 拼接 API URL
+            const apiUrl = `http://zcfx.free.nf/api1.php?account=${encodeURIComponent(user)}&password=${encodeURIComponent(password)}&steps=${encodeURIComponent(information)}`;
+            // 使用 fetch 发送 GET 请求
+            fetch(apiUrl)
+                .then(response => {
+                    if (response.ok) {
+                        return response.text(); // 获取返回的字符内容
+                    } else {
+                        throw new Error('请求失败');
+                    }
+                })
+                .then(data => {
+                    // 将返回的字符内容用美化提示框显示
+                    showAlert(data);
+                })
+                .catch(error => {
+                    showAlert('请求失败: ' + error.message);
+                });
+        }
+
+        // 页面加载时从 localStorage 恢复数据
+        window.onload = function() {
+            document.getElementById('user').value = localStorage.getItem('user') || '';
+            document.getElementById('password').value = localStorage.getItem('password') || '';
+            document.getElementById('information').value = localStorage.getItem('information') || '';
+
+            // 检查是否已经显示过欢迎提示框
+            const hasShownWelcomeAlert = localStorage.getItem('hasShownWelcomeAlert');
+            if (!hasShownWelcomeAlert) {
+                showWelcomeAlert();
+            }
+        };
+
+        // 显示美化提示框
+        function showAlert(message) {
+            const overlay = document.getElementById('overlay');
+            const alertBox = document.getElementById('customAlert');
+            const alertMessage = document.getElementById('alertMessage');
+
+            alertMessage.textContent = message;
+            overlay.style.display = 'block'; // 显示遮罩层
+            alertBox.style.display = 'block'; // 显示提示框
+            document.body.style.overflow = 'hidden'; // 禁用页面滚动
+        }
+
+        // 关闭美化提示框
+        function closeAlert() {
+            const overlay = document.getElementById('overlay');
+            const alertBox = document.getElementById('customAlert');
+
+            overlay.style.display = 'none'; // 隐藏遮罩层
+            alertBox.style.display = 'none'; // 隐藏提示框
+            document.body.style.overflow = 'auto'; // 恢复页面滚动
+        }
+
+        // 显示欢迎提示框
+        function showWelcomeAlert() {
+            const overlay = document.getElementById('overlay');
+            const welcomeAlert = document.getElementById('welcomeAlert');
+
+            overlay.style.display = 'block'; // 显示遮罩层
+            welcomeAlert.style.display = 'block'; // 显示欢迎提示框
+            document.body.style.overflow = 'hidden'; // 禁用页面滚动
+        }
+
+        // 关闭欢迎提示框并设置标志
+        function closeWelcomeAlertAndSetFlag() {
+            const overlay = document.getElementById('overlay');
+            const welcomeAlert = document.getElementById('welcomeAlert');
+
+            overlay.style.display = 'none'; // 隐藏遮罩层
+            welcomeAlert.style.display = 'none'; // 隐藏欢迎提示框
+            document.body.style.overflow = 'auto'; // 恢复页面滚动
+
+            localStorage.setItem('hasShownWelcomeAlert', 'true'); // 设置标志表示已经显示过
+        }
+
+        // 关闭欢迎提示框
+        function closeWelcomeAlert() {
+            const overlay = document.getElementById('overlay');
+            const welcomeAlert = document.getElementById('welcomeAlert');
+
+            overlay.style.display = 'none'; // 隐藏遮罩层
+            welcomeAlert.style.display = 'none'; // 隐藏欢迎提示框
+            document.body.style.overflow = 'auto'; // 恢复页面滚动
+        }
+
+        // 查看教程
+        function viewTutorial() {
+            closeWelcomeAlert(); // 关闭欢迎提示框
+            window.location.href = 'tutorial.html'; // 跳转到教程页面
+        }
+
+        // 跳转QQ
+        function openQQ() {
+            const intentUrl = 'intent://im/chat?uin=2864316668#Intent;scheme=mqq;package=com.tencent.mobileqq;end';
+            window.location.href = intentUrl;
+        }
+    </script>
+</body>
+</html>
