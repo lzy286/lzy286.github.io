@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>白嫖神器</title>
+    <title>影视播放器</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -12,17 +12,6 @@
             padding: 20px;
             background-color: #f5f5f5;
         }
-      
-      
-      #searchBtn {
-    display: block; /* 使按钮成为块级元素 */
-    width: 100%;     /* 设置按钮宽度为80%容器宽度 */
-    margin: 15px auto; /* 上下15px外边距，左右自动（实现水平居中） */
-    padding: 8px;  /* 增加内边距使按钮更长条 */
-    text-align: center; /* 文字居中 */
-    font-size: 16px; /* 可选：增大字体 */
-    font-weight: bold; /* 可选：加粗字体 */
-}
         .container {
             background-color: white;
             padding: 20px;
@@ -32,6 +21,7 @@
         h1 {
             color: #333;
             text-align: center;
+            margin-bottom: 20px;
         }
         .form-group {
             margin-bottom: 15px;
@@ -43,20 +33,24 @@
         }
         input[type="text"], select {
             width: 100%;
-            text-align: center; /* 文字居中 */
-            padding: 8px;
+            padding: 12px;
             border: 1px solid #ddd;
             border-radius: 4px;
             box-sizing: border-box;
+            font-size: 16px;
         }
         button {
             background-color: #4CAF50;
             color: white;
             border: none;
-            padding: 10px 15px;
+            padding: 12px 20px;
             border-radius: 4px;
             cursor: pointer;
-            margin-right: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            width: 100%;
+            margin-top: 10px;
+            transition: background-color 0.3s;
         }
         button:hover {
             background-color: #45a049;
@@ -70,9 +64,10 @@
             display: none;
         }
         .result-item, .episode-item {
-            padding: 10px;
+            padding: 12px;
             border-bottom: 1px solid #eee;
             cursor: pointer;
+            transition: background-color 0.2s;
         }
         .result-item:hover, .episode-item:hover {
             background-color: #f9f9f9;
@@ -81,55 +76,137 @@
             margin-top: 20px;
             display: none;
             width: 100%;
+            position: relative;
         }
         video {
             width: 100%;
             background-color: #000;
+            border-radius: 4px;
         }
         .loading {
             text-align: center;
-            padding: 20px;
+            padding: 30px;
             color: #666;
+            font-size: 18px;
         }
         .error {
-            color: red;
+            color: #d32f2f;
             margin-top: 10px;
+            padding: 10px;
+            background-color: #ffebee;
+            border-radius: 4px;
+            text-align: center;
+            font-weight: bold;
         }
-        /* 添加复制链接按钮样式 */
+        /* 复制链接按钮样式 */
         #copyLinkBtn {
-            display: block;
-            width: 80%;
-            margin: 10px auto;
-            padding: 12px;
+            display: none;
             background-color: white;
-            color: black;
+            color: #333;
             border: 1px solid #ddd;
+            padding: 12px 20px;
             border-radius: 4px;
             font-weight: bold;
             cursor: pointer;
             text-align: center;
+            width: 100%;
+            margin-top: 10px;
+            transition: all 0.3s;
         }
         #copyLinkBtn:hover {
             background-color: #f5f5f5;
+            border-color: #4CAF50;
+            color: #4CAF50;
+        }
+        #copyLinkBtn:active {
+            background-color: #e8f5e9;
+        }
+        .controls-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .section-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .section-title h3 {
+            margin: 0;
+        }
+        .info-box {
+            background-color: #e8f5e9;
+            border-left: 4px solid #4CAF50;
+            padding: 10px;
+            margin: 15px 0;
+            border-radius: 0 4px 4px 0;
+            display: none;
+        }
+
+        /* 视频控件样式优化 */
+        video::-webkit-media-controls {
+            transition: opacity 0.3s ease;
+        }
+
+        video::-webkit-media-controls-play-button,
+        video::-webkit-media-controls-volume-slider,
+        video::-webkit-media-controls-mute-button,
+        video::-webkit-media-controls-fullscreen-button {
+            filter: brightness(0.8);
+        }
+
+        /* 进度条样式修改 - 降低亮度 */
+        video::-webkit-media-controls-progress-bar {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        video::-webkit-media-controls-current-time-display,
+        video::-webkit-media-controls-time-remaining-display {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        video::-webkit-media-controls-timeline {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* 全屏状态下的控件自动隐藏样式 */
+        video.fullscreen-mode::-webkit-media-controls {
+            opacity: 0;
+        }
+
+        video.fullscreen-mode:hover::-webkit-media-controls {
+            opacity: 1;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>影视网</h1>
-        &nbsp
+        <h1>🎬 影视播放器</h1>
         
-        <div class="form-group">
-            <input type="text" id="movieName" placeholder="输入影视名称">
+        <div class="info-box" id="corsInfo">
+            提示：已启用CORS代理解决跨域问题，确保请求成功
         </div>
         
-        <button id="searchBtn" onclick="searchMovie()">搜索</button>
+        <div class="form-group">
+            <label for="movieName">请输入影视名称：</label>
+            <input type="text" id="movieName" placeholder="例如：熊出没">
+        </div>
+        
+        <button id="searchBtn" onclick="searchMovie()">搜索影视</button>
         <div id="errorMsg" class="error"></div>
         
-        <div id="loading" class="loading" style="display: none;">请稍等，加载中...</div>
+        <div id="loading" class="loading">请稍等，加载中...</div>
         
         <div id="results"></div>
-        <div id="episodes"></div>
+        
+        <div id="episodes">
+            <div class="section-title">
+                <h3>请选择集数：</h3>
+            </div>
+        </div>
+        
+        <button id="copyLinkBtn">📋 复制链接发送到手机观看</button>
         
         <div id="video-container">
             <video id="videoElement" controls>
@@ -138,22 +215,122 @@
         </div>
     </div>
 
+    <!-- 引入hls.js库 -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@1.4.3/dist/hls.min.js"></script>
+    
     <script>
-        const API_BASE_URL = "https://api.allorigins.win/raw?url=https://moduzy.net/api.php/provide/vod/";
+        // ==================== 核心修改部分 ====================
+        // 使用更可靠的CORS代理服务（保留原始API地址）
+        const API_BASE_URL = "https://moduzy.net/api.php/provide/vod/";
+        
+        // 可用的CORS代理列表（自动切换）
+        const PROXY_SERVICES = [
+         "https://api.allorigins.win/raw?url=",
+        ];
+        
+        // 显示CORS代理信息
+        document.getElementById('corsInfo').style.display = 'block';
+        
         let currentMovieList = [];
         let currentEpisodeList = [];
-        let currentSelectedEpisodeUrl = ""; // 存储当前选中的集数URL
+        let currentSelectedEpisodeUrl = "";
+        let currentProxyIndex = 0; // 当前使用的代理索引
+        let hls = null; // HLS播放器实例
+        let inactivityTimer = null; // 无操作计时器
         
+        // 初始化页面状态
+        document.getElementById("loading").style.display = "none";
+        document.getElementById("copyLinkBtn").style.display = "none";
+        
+        // 添加回车键搜索支持
         document.getElementById('movieName').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 searchMovie();
             }
         });
         
+        // 绑定复制按钮事件
+        document.getElementById('copyLinkBtn').addEventListener('click', copyVideoUrl);
+        
+        // 视频元素事件监听 - 处理全屏状态和控件显示
+        const videoElement = document.getElementById('videoElement');
+        
+        // 监听全屏状态变化
+        videoElement.addEventListener('fullscreenchange', handleFullscreenChange);
+        videoElement.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+        videoElement.addEventListener('mozfullscreenchange', handleFullscreenChange);
+        videoElement.addEventListener('msfullscreenchange', handleFullscreenChange);
+        
+        // 监听鼠标移动 - 用于显示/隐藏控件
+        videoElement.addEventListener('mousemove', resetInactivityTimer);
+        
+        // 处理全屏状态变化
+        function handleFullscreenChange() {
+            const isFullscreen = !!document.fullscreenElement ||
+                               !!document.webkitFullscreenElement ||
+                               !!document.mozFullScreenElement ||
+                               !!document.msFullscreenElement;
+            
+            if (isFullscreen) {
+                videoElement.classList.add('fullscreen-mode');
+                resetInactivityTimer(); // 启动计时器
+            } else {
+                videoElement.classList.remove('fullscreen-mode');
+                clearTimeout(inactivityTimer); // 清除计时器
+            }
+        }
+        
+        // 重置无操作计时器
+        function resetInactivityTimer() {
+            if (!videoElement.classList.contains('fullscreen-mode')) return;
+            
+            // 清除现有计时器
+            clearTimeout(inactivityTimer);
+            
+            // 立即显示控件
+            videoElement.style.cursor = 'default';
+            
+            // 3秒后隐藏控件
+            inactivityTimer = setTimeout(() => {
+                if (videoElement.classList.contains('fullscreen-mode')) {
+                    videoElement.style.cursor = 'none';
+                }
+            }, 3000);
+        }
+        
+        // ==================== 优化的API请求函数 ====================
+        async function fetchWithRetry(url, retries = 3) {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const proxyUrl = PROXY_SERVICES[currentProxyIndex] + encodeURIComponent(url);
+                    const response = await fetch(proxyUrl);
+                    
+                    if (!response.ok) {
+                        throw new Error(`API请求失败: ${response.status}`);
+                    }
+                    
+                    return await response.json();
+                } catch (error) {
+                    console.error(`代理请求失败 (尝试 ${i+1}/${retries}):`, error);
+                    
+                    // 切换到下一个代理
+                    currentProxyIndex = (currentProxyIndex + 1) % PROXY_SERVICES.length;
+                    
+                    // 更新代理提示信息
+                    document.getElementById('corsInfo').textContent = 
+                        `提示：已切换到代理服务`;
+                    
+                    if (i === retries - 1) {
+                        throw error; // 最后一次尝试后仍然失败则抛出错误
+                    }
+                }
+            }
+        }
+        
         async function searchMovie() {
             const movieName = document.getElementById("movieName").value.trim();
             if (!movieName) {
-                showError("请输入影视名称：");
+                showError("请输入影视名称");
                 return;
             }
             
@@ -164,22 +341,15 @@
             document.getElementById("results").style.display = "none";
             document.getElementById("episodes").style.display = "none";
             document.getElementById("video-container").style.display = "none";
-            
-            // 隐藏复制按钮
-            const copyBtn = document.getElementById("copyLinkBtn");
-            if (copyBtn) copyBtn.style.display = "none";
+            document.getElementById("copyLinkBtn").style.display = "none";
             
             try {
-                const response = await fetch(`${API_BASE_URL}?ac=detail&wd=${encodeURIComponent(movieName)}&pg=1`);
-                
-                if (!response.ok) {
-                    throw new Error(`API请求失败: ${response.status}`);
-                }
-                
-                const data = await response.json();
+                // 使用优化的API请求函数
+                const apiUrl = `${API_BASE_URL}?ac=detail&wd=${encodeURIComponent(movieName)}&pg=1`;
+                const data = await fetchWithRetry(apiUrl);
                 
                 if (!data.list || data.list.length === 0) {
-                    throw new Error("未找到相关影视");
+                    throw new Error("未找到相关影视，请尝试其他名称");
                 }
                 
                 currentMovieList = data.list.map(item => ({
@@ -190,7 +360,7 @@
                 
                 displayResults();
             } catch (error) {
-                showError(error.message);
+                showError("搜索失败: " + error.message);
                 console.error("搜索出错:", error);
             } finally {
                 searchBtn.disabled = false;
@@ -205,7 +375,7 @@
             currentMovieList.forEach((movie, index) => {
                 const item = document.createElement("div");
                 item.className = "result-item";
-                item.textContent = movie.name;
+                item.textContent = `${index + 1}. ${movie.name}`;
                 item.onclick = () => selectMovie(index);
                 resultsDiv.appendChild(item);
             });
@@ -215,13 +385,10 @@
         
         function selectMovie(index) {
             const movie = currentMovieList[index];
-            console.log("选择的影视", movie);
             
-            // 隐藏复制按钮
-            const copyBtn = document.getElementById("copyLinkBtn");
-            if (copyBtn) copyBtn.style.display = "none";
+            document.getElementById("episodes").style.display = "block";
+            document.getElementById("copyLinkBtn").style.display = "none";
             
-            // 解析播放地址
             try {
                 const playUrl = movie.playUrl.replace(/\\/g, "");
                 currentEpisodeList = parseEpisodes(playUrl);
@@ -258,60 +425,125 @@
         
         function displayEpisodes() {
             const episodesDiv = document.getElementById("episodes");
-            episodesDiv.innerHTML = "<h3>请选择集数:</h3>";
-            
-            // 添加复制链接按钮（初始隐藏）
-            const copyBtn = document.createElement("button");
-            copyBtn.id = "copyLinkBtn";
-            copyBtn.textContent = "复制链接";
-            copyBtn.style.display = "none"; // 初始隐藏
-            copyBtn.onclick = copyVideoUrl;
-            episodesDiv.appendChild(copyBtn);
+episodesDiv.innerHTML = "<h3>请选择集数:</h3>";
+            // 清除之前的内容（保留标题）
+            while (episodesDiv.childNodes.length > 1) {
+                episodesDiv.removeChild(episodesDiv.lastChild);
+            }
             
             currentEpisodeList.forEach((episode, index) => {
                 const item = document.createElement("div");
                 item.className = "episode-item";
-                item.textContent = episode.name;
+                item.textContent = `${index + 1}. ${episode.name}`;
                 item.onclick = () => playVideo(index);
                 episodesDiv.appendChild(item);
             });
-            
-            episodesDiv.style.display = "block";
-            document.getElementById("video-container").style.display = "none";
         }
         
         function playVideo(index) {
             const episode = currentEpisodeList[index];
-            console.log("播放:", episode);
             
             const videoContainer = document.getElementById("video-container");
             const videoElement = document.getElementById("videoElement");
             
-            // 清除之前的source元素
+            // 清除错误信息
+            document.getElementById("errorMsg").textContent = "";
+            
+            // 销毁之前的HLS实例
+            if (hls) {
+                hls.destroy();
+                hls = null;
+            }
+            
+            // 重置视频元素
+            videoElement.removeAttribute('src');
             while (videoElement.firstChild) {
                 videoElement.removeChild(videoElement.firstChild);
             }
-            
-            // 创建新的source元素
-            const source = document.createElement("source");
-            source.src = episode.url;
-            source.type = getVideoType(episode.url);
-            videoElement.appendChild(source);
-            
-            videoContainer.style.display = "block";
             videoElement.load();
             
-            // 尝试自动播放
-            videoElement.play().catch(e => {
-                console.log("自动播放被阻止:", e);
-            });
+            // 显示视频容器
+            videoContainer.style.display = "block";
+            
+            // 尝试播放视频
+            try {
+                currentSelectedEpisodeUrl = episode.url;
+                
+                // 如果是HLS流（m3u8格式），使用HLS.js播放
+                if (episode.url.includes('.m3u8')) {
+                    // 检查浏览器是否原生支持HLS
+                    if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
+                        // 在Safari等原生支持HLS的浏览器中直接播放
+                        videoElement.src = episode.url;
+                        videoElement.load();
+                        videoElement.play().catch(e => {
+                            console.log("自动播放被阻止:", e);
+                        });
+                    } else if (Hls.isSupported()) {
+                        // 使用hls.js进行播放
+                        hls = new Hls({
+                            debug: false,
+                            enableWorker: true,
+                            lowLatencyMode: true,
+                            backBufferLength: 90
+                        });
+                        
+                        hls.loadSource(episode.url);
+                        hls.attachMedia(videoElement);
+                        
+                        hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                            console.log("HLS manifest 解析完成");
+                            videoElement.play().catch(e => {
+                                console.log("自动播放被阻止:", e);
+                                showError("自动播放被阻止，请手动点击播放");
+                            });
+                        });
+                        
+                        // 处理HLS错误
+                        hls.on(Hls.Events.ERROR, function(event, data) {
+                            console.error("HLS 错误:", data);
+                            if (data.fatal) {
+                                switch (data.type) {
+                                    case Hls.ErrorTypes.NETWORK_ERROR:
+                                        showError("网络错误，请重试");
+                                        hls.startLoad();
+                                        break;
+                                    case Hls.ErrorTypes.MEDIA_ERROR:
+                                        showError("媒体错误，尝试恢复...");
+                                        hls.recoverMediaError();
+                                        break;
+                                    default:
+                                        showError("播放失败: " + data.details);
+                                        break;
+                                }
+                            }
+                        });
+                    } else {
+                        throw new Error("您的浏览器不支持播放m3u8视频");
+                    }
+                } else {
+                    // 非HLS视频，创建source元素播放
+                    const source = document.createElement("source");
+                    source.src = episode.url;
+                    source.type = getVideoType(episode.url);
+                    videoElement.appendChild(source);
+                    
+                    videoElement.load();
+                    videoElement.play().catch(e => {
+                        console.log("自动播放被阻止:", e);
+                        showError("自动播放被阻止，请手动点击播放");
+                    });
+                }
+            } catch (error) {
+                showError("播放失败: " + error.message);
+                console.error("播放出错:", error);
+            }
+            
+            // 显示复制链接按钮
+            document.getElementById("copyLinkBtn").style.display = "block";
             
             // 滚动到视频区域
             videoContainer.scrollIntoView({ behavior: "smooth" });
-            
-            // 显示复制链接按钮
-            currentSelectedEpisodeUrl = episode.url;
-            document.getElementById("copyLinkBtn").style.display = "block";
         }
         
         function getVideoType(url) {
@@ -324,7 +556,7 @@
             } else if (url.includes('.ogg')) {
                 return 'video/ogg';
             }
-            return 'video/mp4'; // 默认
+            return 'video/mp4';
         }
         
         function copyVideoUrl() {
@@ -332,7 +564,20 @@
             
             navigator.clipboard.writeText(currentSelectedEpisodeUrl)
                 .then(() => {
-                    alert("链接已复制到剪贴板！");
+                    // 显示成功效果
+                    const btn = document.getElementById("copyLinkBtn");
+                    btn.textContent = "✓ 链接已复制！";
+                    btn.style.backgroundColor = "#e8f5e9";
+                    btn.style.color = "#2e7d32";
+                    btn.style.borderColor = "#2e7d32";
+                    
+                    // 3秒后恢复原状
+                    setTimeout(() => {
+                        btn.textContent = "📋 复制链接手机观看";
+                        btn.style.backgroundColor = "white";
+                        btn.style.color = "#333";
+                        btn.style.borderColor = "#ddd";
+                    }, 3000);
                 })
                 .catch(err => {
                     console.error("复制失败:", err);
