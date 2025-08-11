@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>影视播放器</title>
+    <title>白嫖神器</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -178,11 +178,36 @@
         video.fullscreen-mode:hover::-webkit-media-controls {
             opacity: 1;
         }
+
+        /* 下一集按钮样式 */
+        #nextEpisodeBtn {
+            position: absolute;
+            bottom: 70px;
+            right: 20px;
+            background-color: rgba(0, 0, 0, 0.6);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            z-index: 10;
+        }
+
+        #nextEpisodeBtn:hover {
+            background-color: rgba(76, 175, 80, 0.8);
+        }
+
+        #nextEpisodeBtn:disabled {
+            background-color: rgba(100, 100, 100, 0.6);
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🎬 影视播放器</h1>
+        <h1>🎬 老刘的秘密武器</h1>
         
         <div class="info-box" id="corsInfo">
             提示：已启用CORS代理解决跨域问题，确保请求成功
@@ -212,6 +237,8 @@
             <video id="videoElement" controls>
                 您的浏览器不支持HTML5视频
             </video>
+            <!-- 新增下一集按钮 -->
+            <button id="nextEpisodeBtn" onclick="playNextEpisode()">下一集</button>
         </div>
     </div>
 
@@ -234,6 +261,7 @@
         let currentMovieList = [];
         let currentEpisodeList = [];
         let currentSelectedEpisodeUrl = "";
+        let currentEpisodeIndex = -1; // 新增：当前播放的集数索引
         let currentProxyIndex = 0; // 当前使用的代理索引
         let hls = null; // HLS播放器实例
         let inactivityTimer = null; // 无操作计时器
@@ -241,6 +269,7 @@
         // 初始化页面状态
         document.getElementById("loading").style.display = "none";
         document.getElementById("copyLinkBtn").style.display = "none";
+        document.getElementById("nextEpisodeBtn").style.display = "none"; // 初始化隐藏下一集按钮
         
         // 添加回车键搜索支持
         document.getElementById('movieName').addEventListener('keypress', function(e) {
@@ -342,6 +371,7 @@
             document.getElementById("episodes").style.display = "none";
             document.getElementById("video-container").style.display = "none";
             document.getElementById("copyLinkBtn").style.display = "none";
+            document.getElementById("nextEpisodeBtn").style.display = "none"; // 隐藏下一集按钮
             
             try {
                 // 使用优化的API请求函数
@@ -388,6 +418,7 @@
             
             document.getElementById("episodes").style.display = "block";
             document.getElementById("copyLinkBtn").style.display = "none";
+            document.getElementById("nextEpisodeBtn").style.display = "none"; // 隐藏下一集按钮
             
             try {
                 const playUrl = movie.playUrl.replace(/\\/g, "");
@@ -398,6 +429,8 @@
                 }
                 
                 displayEpisodes();
+                // 滚动到集数选择区域，添加平滑滚动动画
+                document.getElementById("episodes").scrollIntoView({ behavior: "smooth" });
             } catch (error) {
                 showError(error.message);
                 console.error("解析播放地址出错:", error);
@@ -442,9 +475,15 @@ episodesDiv.innerHTML = "<h3>请选择集数:</h3>";
         
         function playVideo(index) {
             const episode = currentEpisodeList[index];
+            currentEpisodeIndex = index; // 记录当前播放的集数索引
             
             const videoContainer = document.getElementById("video-container");
             const videoElement = document.getElementById("videoElement");
+            const nextBtn = document.getElementById("nextEpisodeBtn");
+            
+            // 更新下一集按钮状态
+            nextBtn.style.display = "block";
+            nextBtn.disabled = (index >= currentEpisodeList.length - 1);
             
             // 清除错误信息
             document.getElementById("errorMsg").textContent = "";
@@ -544,6 +583,13 @@ episodesDiv.innerHTML = "<h3>请选择集数:</h3>";
             
             // 滚动到视频区域
             videoContainer.scrollIntoView({ behavior: "smooth" });
+        }
+        
+        // 新增：播放下一集功能
+        function playNextEpisode() {
+            if (currentEpisodeIndex >= 0 && currentEpisodeIndex < currentEpisodeList.length - 1) {
+                playVideo(currentEpisodeIndex + 1);
+            }
         }
         
         function getVideoType(url) {
