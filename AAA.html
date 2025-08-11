@@ -121,6 +121,35 @@
         #copyLinkBtn:active {
             background-color: #e8f5e9;
         }
+        /* 下一集按钮样式 - 与复制按钮保持一致 */
+        #nextEpisodeBtn {
+            display: none;
+            background-color: white;
+            color: #333;
+            border: 1px solid #ddd;
+            padding: 12px 20px;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+            width: 100%;
+            margin-top: 10px;
+            transition: all 0.3s;
+        }
+        #nextEpisodeBtn:hover {
+            background-color: #f5f5f5;
+            border-color: #4CAF50;
+            color: #4CAF50;
+        }
+        #nextEpisodeBtn:active {
+            background-color: #e8f5e9;
+        }
+        #nextEpisodeBtn:disabled {
+            background-color: #f5f5f5;
+            color: #999;
+            border-color: #ddd;
+            cursor: not-allowed;
+        }
         .controls-container {
             display: flex;
             gap: 10px;
@@ -178,31 +207,6 @@
         video.fullscreen-mode:hover::-webkit-media-controls {
             opacity: 1;
         }
-
-        /* 下一集按钮样式 */
-        #nextEpisodeBtn {
-            position: absolute;
-            bottom: 70px;
-            right: 20px;
-            background-color: rgba(0, 0, 0, 0.6);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.3s;
-            z-index: 10;
-        }
-
-        #nextEpisodeBtn:hover {
-            background-color: rgba(76, 175, 80, 0.8);
-        }
-
-        #nextEpisodeBtn:disabled {
-            background-color: rgba(100, 100, 100, 0.6);
-            cursor: not-allowed;
-        }
     </style>
 </head>
 <body>
@@ -232,13 +236,12 @@
         </div>
         
         <button id="copyLinkBtn">📋 复制链接发送到手机观看</button>
+        <button id="nextEpisodeBtn" onclick="playNextEpisode()">▶️ 下一集</button>
         
         <div id="video-container">
             <video id="videoElement" controls>
                 您的浏览器不支持HTML5视频
             </video>
-            <!-- 新增下一集按钮 -->
-            <button id="nextEpisodeBtn" onclick="playNextEpisode()">下一集</button>
         </div>
     </div>
 
@@ -481,9 +484,13 @@ episodesDiv.innerHTML = "<h3>请选择集数:</h3>";
             const videoElement = document.getElementById("videoElement");
             const nextBtn = document.getElementById("nextEpisodeBtn");
             
-            // 更新下一集按钮状态
-            nextBtn.style.display = "block";
-            nextBtn.disabled = (index >= currentEpisodeList.length - 1);
+            // 更新下一集按钮状态 - 只有多集时才显示
+            if (currentEpisodeList.length > 1) {
+                nextBtn.style.display = "block";
+                nextBtn.disabled = (index >= currentEpisodeList.length - 1);
+            } else {
+                nextBtn.style.display = "none";
+            }
             
             // 清除错误信息
             document.getElementById("errorMsg").textContent = "";
