@@ -525,8 +525,8 @@ episodesDiv.innerHTML = "<h3>请选择集数:</h3>";
                         videoElement.play().catch(e => {
                             console.log("自动播放被阻止:", e);
                         });
-                    } else if (Hls.isSupported()) {
-                        // 使用hls.js进行播放
+                    } else if (typeof Hls !== 'undefined' && Hls.isSupported()) {
+                        // 确保Hls已定义且支持
                         hls = new Hls({
                             debug: false,
                             enableWorker: true,
@@ -565,7 +565,8 @@ episodesDiv.innerHTML = "<h3>请选择集数:</h3>";
                             }
                         });
                     } else {
-                        throw new Error("您的浏览器不支持播放m3u8视频");
+                        // Hls未定义或不支持的情况
+                        throw new Error("您的浏览器不支持m3u8视频播放，请更换浏览器或使用Chrome、Firefox等现代浏览器");
                     }
                 } else {
                     // 非HLS视频，创建source元素播放
