@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>DBtune AI · 自愈SQL引擎 | 多Agent协作平台</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0A0C12;
+            font-family: 'Inter', sans-serif;
+            color: #EFF3F6;
+            padding: 20px 24px;
+        }
+
+        /* 模拟真实产品暗色风格 */
+        .app-container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        /* 玻璃质感+深色高级 */
+        .card {
+            background: rgba(18, 22, 32, 0.85);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(48, 54, 70, 0.8);
+            border-radius: 28px;
+            box-shadow: 0 20px 35px -12px rgba(0,0,0,0.6);
+            transition: all 0.2s ease;
+        }
+
+        .card-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid rgba(66, 72, 88, 0.5);
+            font-weight: 600;
+            font-size: 0.9rem;
+            letter-spacing: -0.2px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* 指标网格 */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.2rem;
+            margin-bottom: 1.8rem;
+        }
+
+        .stat-tile {
+            background: #11161F;
+            border-radius: 24px;
+            padding: 1.2rem 1.2rem;
+            border: 1px solid #252e3f;
+            transition: 0.2s;
+        }
+
+        .stat-tile .label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            font-weight: 500;
+            letter-spacing: 0.03em;
+            color: #8E9AAF;
+        }
+
+        .stat-tile .value {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-top: 8px;
+            background: linear-gradient(135deg, #FFFFFF, #A5B4FC);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .stat-tile .trend {
+            font-size: 0.7rem;
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* 双列布局 */
+        .two-col-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.8rem;
+        }
+
+        @media (max-width: 1100px) {
+            .two-col-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Agent 协作可视化 */
+        .agent-pipeline {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            margin: 1rem 0 1.2rem;
+            flex-wrap: wrap;
+        }
+        .agent-card {
+            flex: 1;
+            background: #0E121C;
+            border-radius: 20px;
+            padding: 0.8rem;
+            text-align: center;
+            border-left: 3px solid;
+        }
+        .agent-card.analyst { border-left-color: #8B5CF6; }
+        .agent-card.tuner { border-left-color: #10B981; }
+        .agent-card.validator { border-left-color: #F59E0B; }
+        .agent-name {
+            font-weight: 700;
+            font-size: 0.8rem;
+        }
+        .agent-status {
+            font-size: 0.65rem;
+            color: #7E8AA2;
+            margin-top: 4px;
+        }
+        .step-progress {
+            background: #0B0E16;
+            border-radius: 18px;
+            padding: 0.8rem;
+            margin: 12px 0;
+        }
+        .step-line {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .step-badge {
+            background: #1E293B;
+            border-radius: 40px;
+            padding: 4px 12px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+        .step-badge.active {
+            background: #F59E0B;
+            color: #0A0C12;
+        }
+        .step-badge.completed {
+            background: #10B981;
+            color: white;
+        }
+
+        /* 实时日志 */
+        .live-log {
+            background: #070A10;
+            border-radius: 20px;
+            padding: 0.8rem;
+            height: 280px;
+            overflow-y: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+        }
+        .log-item {
+            padding: 6px 0;
+            border-bottom: 1px solid #1A1F2C;
+            color: #B9C3DB;
+        }
+
+        /* SQL 工作区 */
+        .sql-editor {
+            background: #0C111A;
+            border-radius: 20px;
+            padding: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            border: 1px solid #2D3748;
+            width: 100%;
+            resize: vertical;
+            color: #E2E8F0;
+        }
+        .optimized-block {
+            background: #0B0F17;
+            border-radius: 18px;
+            padding: 1rem;
+            margin-top: 0.8rem;
+            border-left: 4px solid #10B981;
+        }
+        .btn-primary {
+            background: linear-gradient(100deg, #3B82F6, #2563EB);
+            border: none;
+            border-radius: 40px;
+            padding: 10px 20px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            color: white;
+            font-size: 0.8rem;
+        }
+        .badge {
+            background: #1F2A3E;
+            border-radius: 40px;
+            padding: 4px 12px;
+            font-size: 0.7rem;
+        }
+        hr {
+            border-color: #262E3F;
+        }
+        .chart-container {
+            background: #10141E;
+            border-radius: 20px;
+            padding: 0.8rem;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <!-- 顶部品牌栏 -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px;">
+        <div>
+            <h1 style="font-size: 1.9rem; font-weight: 800; background: linear-gradient(145deg, #FFF, #7C9BFF); -webkit-background-clip: text; background-clip: text; color: transparent;">DBtune AI</h1>
+            <p style="color: #8290AA; font-size: 0.75rem;">多Agent自愈引擎 · 生产闭环 · 累计优化13.2k+慢查询</p>
+        </div>
+        <div class="badge" style="background: #1F2A3E;">⚡ 实时数据 | 最后同步: 2秒前</div>
+    </div>
+
+    <!-- KPI 大指标 (吹得真实但合理) -->
+    <div class="stats-row">
+        <div class="stat-tile"><div class="label">📊 累计节省计算成本</div><div class="value">$2.43M</div><div class="trend">↑ 22.4% 本月</div></div>
+        <div class="stat-tile"><div class="label">🤖 日均SQL调优请求</div><div class="value">1,284</div><div class="trend">峰值 2.1K | +36% MoM</div></div>
+        <div class="stat-tile"><div class="label">⚡ 平均调优时长</div><div class="value">4.8<span style="font-size: 1rem;">min</span></div><div class="trend">vs 人工 47min ↓89%</div></div>
+        <div class="stat-tile"><div class="label">🪙 日Token消耗</div><div class="value">8.02M</div><div class="trend">效率比预估高 17%</div></div>
+        <div class="stat-tile"><div class="label">✅ 自愈成功率</div><div class="value">97.3%</div><div class="trend">沙盒验证通过率</div></div>
+    </div>
+
+    <!-- 核心区: Agent + 实时协作监控 -->
+    <div class="two-col-grid">
+        <!-- 左侧: Agent 实时协作 & 长链推理 -->
+        <div class="card">
+            <div class="card-header">
+                <span>🧠 多Agent协作拓扑 · 长链推理引擎</span>
+                <span class="badge" id="inferenceStatus">🔵 空闲 | 等待任务</span>
+            </div>
+            <div style="padding: 0 1.2rem 1.2rem 1.2rem;">
+                <!-- 三个Agent状态卡片 -->
+                <div class="agent-pipeline">
+                    <div class="agent-card analyst"><div class="agent-name">🔍 分析Agent</div><div class="agent-status" id="analystStatus">待命中</div></div>
+                    <div class="agent-card tuner"><div class="agent-name">⚙️ 调优Agent</div><div class="agent-status" id="tunerStatus">待命中</div></div>
+                    <div class="agent-card validator"><div class="agent-name">✅ 验证Agent</div><div class="agent-status" id="validatorStatus">待命中</div></div>
+                </div>
+                <!-- 长链推理步骤可视化 (模拟实时步骤) -->
+                <div class="step-progress" id="reasoningStepsContainer">
+                    <div style="font-size:0.7rem; color:#97A3C2; margin-bottom: 10px;">📌 长链推理管线 (Chain-of-Thought)</div>
+                    <div class="step-line" id="stepLine1"><span class="step-badge" id="step1Badge">1. 语法解析 & AST</span><span id="step1Icon">⏳</span></div>
+                    <div class="step-line" id="stepLine2"><span class="step-badge" id="step2Badge">2. 代价估算 (CBO)</span><span id="step2Icon">⏳</span></div>
+                    <div class="step-line" id="stepLine3"><span class="step-badge" id="step3Badge">3. 索引/反模式检测</span><span id="step3Icon">⏳</span></div>
+                    <div class="step-line" id="stepLine4"><span class="step-badge" id="step4Badge">4. 重写策略 & 物化建议</span><span id="step4Icon">⏳</span></div>
+                    <div class="step-line" id="stepLine5"><span class="step-badge" id="step5Badge">5. 风险评分 & 校验门禁</span><span id="step5Icon">⏳</span></div>
+                </div>
+                <!-- 实时消息总线日志 -->
+                <div style="margin-top: 8px;"><span style="font-size:0.7rem; font-weight:600;">📡 Agent 协作消息总线 (实时)</span></div>
+                <div class="live-log" id="liveLogPanel">
+                    <div class="log-item">⚙️ [主控] 系统就绪 | 已加载30+数仓核心表统计信息</div>
+                    <div class="log-item">📌 最近自动调优: 昨日处理219个慢查询，综合提升67%</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧: 实时性能图表 (伪造但专业的曲线) -->
+        <div class="card">
+            <div class="card-header">
+                <span>📈 查询响应趋势 (优化前后对比)</span>
+                <span style="font-size:0.65rem;">最后7天 | 自愈引擎覆盖</span>
+            </div>
+            <div style="padding: 0.5rem 1rem 1rem 1rem;">
+                <canvas id="performanceChart" width="400" height="200" style="width:100%; max-height:200px;"></canvas>
+                <div style="display: flex; justify-content: space-between; margin-top: 12px;">
+                    <div><span style="color:#F87171;">● 优化前基线</span><span style="margin-left:12px; color:#34D399;">● Agent优化后</span></div>
+                    <div class="badge">P99 延迟下降 81%</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SQL 优化工作台 (模拟真实调优交互) -->
+    <div class="card" style="margin-top: 6px;">
+        <div class="card-header">
+            <span>🚀 智能调优工作台 · 提交待优化SQL</span>
+            <span style="font-size:0.7rem;">支持血缘追溯 + 长链推理 + 沙盒验证</span>
+        </div>
+        <div style="padding: 1.2rem;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem;">
+                <div>
+                    <label style="font-size:0.75rem; font-weight:500;">❄️ 原始慢查询 (输入或选择典型问题)</label>
+                    <textarea id="rawSqlInput" rows="6" class="sql-editor">SELECT 
+    o.order_id, 
+    c.customer_name, 
+    p.product_name,
+    o.total_amount
+FROM orders o
+LEFT JOIN customers c ON o.customer_id = c.customer_id
+LEFT JOIN products p ON o.product_id = p.product_id
+WHERE DATE(o.created_at) = '2025-03-18'
+  AND o.status IN ('PAID', 'SHIPPED')
+ORDER BY o.total_amount DESC;</textarea>
+                    <div style="margin-top: 12px;">
+                        <button id="runTuneBtn" class="btn-primary">✨ 执行多Agent调优</button>
+                        <button id="resetSqlBtn" style="margin-left: 12px; background: #2D3748;" class="btn-primary">重置示例</button>
+                    </div>
+                    <div style="margin-top: 12px; font-size:0.7rem; color:#8E9AAF;">🔍 当前待处理队列: 2个任务 | 实时Agent并发度: 3</div>
+                </div>
+                <div>
+                    <div style="display: flex; justify-content: space-between;"><span>📋 优化结果 & 性能对比</span><span id="tokenCostBadge" class="badge">本次消耗: 0 Token</span></div>
+                    <div style="background:#0E1320; border-radius: 20px; padding: 0.8rem; margin-top: 6px;">
+                        <div style="display: flex; gap: 20px; margin-bottom: 12px;">
+                            <div><span style="color:#F97373;">原始耗时: 47.2min</span><br><span style="font-size:1rem; font-weight:700;" id="oldCostDisplay">≈47min</span></div>
+                            <div><span style="color:#4ADE80;">优化后耗时: </span><br><span style="font-size:1.5rem; font-weight:800;" id="newCostDisplay">4.9min</span></div>
+                            <div><span>🚀 提升: <strong id="improvePercent">89.6%</strong></span></div>
+                        </div>
+                        <div><span class="badge" id="riskScoreBadge">风险评分: -/10</span> <span class="badge" id="lineageBadge">血缘: 未生成</span></div>
+                        <div class="optimized-block" id="optimizedSqlBlock">
+                            <div style="font-weight:600; margin-bottom:6px;">✨ Agent重写SQL + 索引建议</div>
+                            <pre id="optimizedSqlContent" style="white-space: pre-wrap; font-family: monospace; font-size:0.7rem; color:#B9E2FF;">-- 待调优后展示优化版本 --</pre>
+                        </div>
+                        <div id="sandboxMsg" style="margin-top:8px; font-size:0.7rem;">🔄 沙盒验证: 未执行</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部趋势 & 最近优化记录 -->
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.2rem; margin-top: 1.2rem;">
+        <div class="card">
+            <div class="card-header">📋 最近优化历史 (生产环境抽样)</div>
+            <div style="padding: 0.8rem;">
+                <table style="width:100%; font-size:0.7rem; border-collapse: collapse;">
+                    <thead><tr style="color:#9AA7C2;"><th>原始SQL摘要</th><th>优化前耗时</th><th>优化后</th><th>Agent方案</th></tr></thead>
+                    <tbody id="historyTableBody">
+                        <tr><td>订单宽表join 3表</td><td>52min</td><td>4.2min</td><td>谓词下推+索引覆盖</td></tr>
+                        <tr><td>用户行为分析</td><td>112s</td><td>12s</td><td>物化CTE</td></tr>
+                        <tr><td>分区表范围查询</td><td>38min</td><td>3.1min</td><td>动态分区裁剪</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">🤝 多Agent健康度</div>
+            <div style="padding: 0.8rem;">
+                <div>✅ 分析Agent 可用性 99.98% <progress value="99.98" max="100" style="width:100%; height:4px; border-radius:10px;"></progress></div>
+                <div style="margin-top:12px;">⚙️ 调优Agent 准确率 96.4% <progress value="96.4" max="100" style="width:100%; height:4px;"></progress></div>
+                <div style="margin-top:12px;">✅ 验证Agent 沙盒通过率 97.3% <progress value="97.3" max="100" style="width:100%; height:4px;"></progress></div>
+                <div style="margin-top:16px; font-size:0.65rem; text-align:center;">⏱️ 长链推理平均耗时 2.8秒 | 闭环自愈</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 产品级模拟: 多Agent + 长链推理 + 调优UI更新 (完全仿真实时交互)
+    const rawSqlTextarea = document.getElementById('rawSqlInput');
+    const runBtn = document.getElementById('runTuneBtn');
+    const resetBtn = document.getElementById('resetSqlBtn');
+    const optimizedSqlContent = document.getElementById('optimizedSqlContent');
+    const oldCostSpan = document.getElementById('oldCostDisplay');
+    const newCostSpan = document.getElementById('newCostDisplay');
+    const improveSpan = document.getElementById('improvePercent');
+    const riskBadge = document.getElementById('riskScoreBadge');
+    const lineageBadge = document.getElementById('lineageBadge');
+    const sandboxMsg = document.getElementById('sandboxMsg');
+    const tokenCostBadge = document.getElementById('tokenCostBadge');
+    const liveLogPanel = document.getElementById('liveLogPanel');
+    // Agent状态显示
+    const analystStatus = document.getElementById('analystStatus');
+    const tunerStatus = document.getElementById('tunerStatus');
+    const validatorStatus = document.getElementById('validatorStatus');
+    const inferenceStatusSpan = document.getElementById('inferenceStatus');
+    // 步骤图标元素
+    const stepIcons = {
+        step1: document.getElementById('step1Icon'),
+        step2: document.getElementById('step2Icon'),
+        step3: document.getElementById('step3Icon'),
+        step4: document.getElementById('step4Icon'),
+        step5: document.getElementById('step5Icon')
+    };
+    // 获取所有步骤的badge元素，用于改变active样式
+    const stepBadges = {
+        step1: document.getElementById('step1Badge'),
+        step2: document.getElementById('step2Badge'),
+        step3: document.getElementById('step3Badge'),
+        step4: document.getElementById('step4Badge'),
+        step5: document.getElementById('step5Badge')
+    };
+
+    function addLog(msg, type = 'system') {
+        const logDiv = document.createElement('div');
+        logDiv.className = 'log-item';
+        let prefix = '';
+        if (type === 'analyst') prefix = '🔍 [分析Agent] ';
+        else if (type === 'tuner') prefix = '⚙️ [调优Agent] ';
+        else if (type === 'validator') prefix = '✅ [验证Agent] ';
+        else prefix = '🎛️ [主控] ';
+        logDiv.innerHTML = prefix + msg;
+        liveLogPanel.appendChild(logDiv);
+        logDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        if (liveLogPanel.children.length > 40) liveLogPanel.removeChild(liveLogPanel.firstChild);
+    }
+
+    function resetStepState() {
+        for (let key in stepIcons) {
+            stepIcons[key].innerHTML = '⏳';
+        }
+        for (let key in stepBadges) {
+            stepBadges[key].classList.remove('active', 'completed');
+            stepBadges[key].classList.add('step-badge');
+        }
+    }
+
+    function setStepActive(stepIdx) {
+        const map = ['step1', 'step2', 'step3', 'step4', 'step5'];
+        if (stepIdx >= map.length) return;
+        const icon = stepIcons[map[stepIdx]];
+        const badge = stepBadges[map[stepIdx]];
+        if (icon) icon.innerHTML = '⚡';
+        if (badge) badge.classList.add('active');
+    }
+
+    function setStepCompleted(stepIdx) {
+        const map = ['step1', 'step2', 'step3', 'step4', 'step5'];
+        if (stepIdx >= map.length) return;
+        const icon = stepIcons[map[stepIdx]];
+        const badge = stepBadges[map[stepIdx]];
+        if (icon) icon.innerHTML = '✅';
+        if (badge) {
+            badge.classList.remove('active');
+            badge.classList.add('completed');
+        }
+    }
+
+    function updateAgentStatus(analyst, tuner, validator, inference) {
+        analystStatus.innerText = analyst;
+        tunerStatus.innerText = tuner;
+        validatorStatus.innerText = validator;
+        inferenceStatusSpan.innerText = inference;
+    }
+
+    // 模拟长链推理和多Agent协作
+    async function simulateOptimization(rawSql) {
+        updateAgentStatus("工作中 (解析SQL)", "待命中", "待命中", "🔵 推理中: 阶段1/5");
+        resetStepState();
+        addLog("接收到SQL调优请求，启动长链推理引擎", "system");
+        await delay(400);
+        // 步骤1
+        setStepActive(0);
+        addLog("正在提取AST，识别表：orders, customers, products 及函数调用 DATE() 导致索引失效", "analyst");
+        await delay(650);
+        setStepCompleted(0);
+        addLog("SQL解析完成，发现隐式转换和全表扫描风险", "analyst");
+        updateAgentStatus("分析完成", "激活调优", "待命中", "🔵 推理中: 阶段2/5");
+        
+        // 步骤2
+        setStepActive(1);
+        addLog("CBO代价估算: 原执行计划cost=12743，扫描行~460W，需要Rewrite", "system");
+        await delay(700);
+        setStepCompleted(1);
+        addLog("调优Agent介入，建议将DATE范围改写为区间查询，并调整JOIN顺序", "tuner");
+        updateAgentStatus("完成", "工作中 (生成重写)", "待命中", "🔵 推理中: 阶段3/5");
+        
+        // 步骤3
+        setStepActive(2);
+        addLog("索引检测: 推荐创建复合索引 idx_orders_created_status", "analyst");
+        await delay(550);
+        setStepCompleted(2);
+        
+        // 步骤4 重写策略
+        setStepActive(3);
+        addLog("调优Agent生成最终优化SQL: 谓词下推、分区裁剪、消除LEFT JOIN冗余", "tuner");
+        await delay(800);
+        setStepCompleted(3);
+        updateAgentStatus("完成", "优化SQL已生成", "验证待启动", "🔵 推理中: 阶段4/5");
+        
+        // 步骤5 风险评分 沙盒
+        setStepActive(4);
+        addLog("验证Agent启动沙盒环境，执行原SQL与优化版本对比", "validator");
+        await delay(600);
+        const riskScore = (Math.random() * 0.8 + 8.9).toFixed(1);
+        riskBadge.innerText = `风险评分: ${riskScore}/10 (低风险)`;
+        addLog(`等价性校验通过，无数据差异。性能提升预估: 89%`, "validator");
+        setStepCompleted(4);
+        updateAgentStatus("完成", "完成", "验证通过", "✅ 空闲 | 最后一次调优成功");
+        
+        // 血缘模拟
+        lineageBadge.innerText = "血缘: orders.customer_id→customers.customer_id (字段级完整)";
+        addLog("血缘Agent构建流向: 输出列均来自原始表，created_at条件转化为范围扫描", "analyst");
+        // 优化后SQL生成
+        const optimized = generateOptimizedSQLBasedOn(rawSql);
+        optimizedSqlContent.innerText = optimized;
+        // 更新性能对比
+        const oldMin = 47;
+        const newMin = (4 + Math.random() * 1.2).toFixed(1);
+        oldCostSpan.innerText = `${oldMin}min`;
+        newCostSpan.innerText = `${newMin}min`;
+        const improve = ((oldMin - newMin)/oldMin * 100).toFixed(1);
+        improveSpan.innerText = `${improve}%`;
+        sandboxMsg.innerHTML = "✅ 沙盒验证完成 | 执行计划cost降低89%，无逻辑变更";
+        // token消耗随机合理
+        const consumed = Math.floor(75000 + Math.random() * 45000);
+        tokenCostBadge.innerText = `本次消耗: ${consumed.toLocaleString()} Token (日累计8.02M)`;
+        addLog(`调优闭环结束，本次消耗token约${consumed}，累计自愈查询达13k+`, "system");
+    }
+
+    function generateOptimizedSQLBasedOn(sql) {
+        if (sql.includes('DATE(o.created_at)')) {
+            return `-- 🔥 AI Agent 自动重写 (长链推理+多Agent协作)
+WITH date_filter AS (
+    SELECT timestamp '2025-03-18 00:00:00' AS start_ts,
+           timestamp '2025-03-19 00:00:00' AS end_ts
+)
+SELECT 
+    o.order_id, 
+    c.customer_name,
+    p.product_name,
+    o.total_amount
+FROM orders o
+INNER JOIN customers c ON o.customer_id = c.customer_id
+INNER JOIN products p ON o.product_id = p.product_id
+CROSS JOIN date_filter df
+WHERE o.created_at >= df.start_ts AND o.created_at < df.end_ts
+  AND o.status IN ('PAID', 'SHIPPED')
+ORDER BY o.total_amount DESC;
+
+-- 索引建议: CREATE INDEX idx_orders_status_created ON orders(status, created_at);`;
+        } else {
+            return `-- 智能重写: 谓词下推 + 物化推荐
+SELECT order_id, customer_name, product_name, total_amount
+FROM orders 
+JOIN customers USING(customer_id) 
+WHERE created_at BETWEEN '2025-03-18' AND '2025-03-19' 
+AND status IN ('PAID','SHIPPED')
+ORDER BY total_amount DESC;`;
+        }
+    }
+
+    function delay(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+    let isRunning = false;
+    async function onRunTune() {
+        if (isRunning) {
+            addLog("已有调优任务在进行，请稍后", "system");
+            return;
+        }
+        isRunning = true;
+        runBtn.disabled = true;
+        const sql = rawSqlTextarea.value.trim();
+        if (!sql) {
+            addLog("错误: 请输入SQL语句", "system");
+            runBtn.disabled = false;
+            isRunning = false;
+            return;
+        }
+        // 重置部分显示
+        optimizedSqlContent.innerText = "-- Agent 推理中，长链分析进行中...";
+        sandboxMsg.innerHTML = "⏳ 沙盒验证等待中...";
+        lineageBadge.innerText = "血缘: 实时构建中";
+        riskBadge.innerText = "风险评分: 推理中";
+        addLog(`开始处理SQL (长度${sql.length})，多Agent协作开启`, "system");
+        await simulateOptimization(sql);
+        runBtn.disabled = false;
+        isRunning = false;
+        // 额外追加历史表格 (演示新加一行)
+        const tbody = document.getElementById('historyTableBody');
+        const newRow = tbody.insertRow(0);
+        newRow.innerHTML = `<tr><td>${sql.substring(0, 30)}...</td><td>47min</td><td>${document.getElementById('newCostDisplay').innerText}</td><td>Agent全自动</td></tr>`;
+        if (tbody.children.length > 6) tbody.deleteRow(5);
+    }
+
+    function resetSqlExample() {
+        rawSqlTextarea.value = `SELECT 
+    o.order_id, 
+    c.customer_name, 
+    p.product_name,
+    o.total_amount
+FROM orders o
+LEFT JOIN customers c ON o.customer_id = c.customer_id
+LEFT JOIN products p ON o.product_id = p.product_id
+WHERE DATE(o.created_at) = '2025-03-18'
+  AND o.status IN ('PAID', 'SHIPPED')
+ORDER BY o.total_amount DESC;`;
+        addLog("重置为标准慢查询样例，可开始调优", "system");
+    }
+
+    runBtn.addEventListener('click', onRunTune);
+    resetBtn.addEventListener('click', resetSqlExample);
+
+    // 初始化 Chart.js (伪造性能曲线 优化前后对比)
+    const ctx = document.getElementById('performanceChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['3/12', '3/13', '3/14', '3/15', '3/16', '3/17', '今日'],
+            datasets: [
+                { label: '优化前平均耗时 (min)', data: [48, 52, 47, 50, 46, 49, 47], borderColor: '#F87171', backgroundColor: 'transparent', tension: 0.3, pointBackgroundColor: '#F87171' },
+                { label: 'Agent优化后 (min)', data: [5.2, 5.0, 4.8, 4.7, 4.5, 4.4, 4.2], borderColor: '#34D399', backgroundColor: 'transparent', tension: 0.3, pointBackgroundColor: '#34D399' }
+            ]
+        },
+        options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'top', labels: { color: '#C9D1D9' } } } }
+    });
+    addLog("DBtune 就绪 | Agent集群健康度 99.9% | 闭环验证在线", "system");
+</script>
+</body>
+</html>
